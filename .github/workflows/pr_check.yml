@@ -14,7 +14,6 @@ jobs:
       - name: List changed files
         id: list_files
         run: |
-          # echo "::set-output name=files::$(git diff --name-status ${{ github.event.before }} ${{ github.sha }})"
           echo "::set-output name=files::$(git diff --name-status main..feature_action_test)"
 
       - name: Run Python script
