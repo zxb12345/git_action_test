@@ -14,4 +14,4 @@ jobs:
       - name: List changed files
         id: list_files
         run: |
-          git diff --name-status main..feature_action_test
+          git diff --name-status origin/main..origin/feature_action_test
