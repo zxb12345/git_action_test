@@ -27,7 +27,8 @@ def group_files_by_directory(file_path):
 
     with open(file_path, 'r') as file:
         for line in file:
-            status, filename = line.strip().split(maxsplit=1)
+            # status, filename = line.strip().split(maxsplit=1)
+            filename = line
             
             if 'CHANGELOG.md' in filename:
                 changelog_files.append(filename)
