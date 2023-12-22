@@ -1,0 +1,23 @@
+A	.github/workflows/check_changelog.yml
+A	.github/workflows/demo.yml
+D	.github/workflows/pr_check.yml
+M	scripts/check_changelog.py
+R100	CHANGELOG.md	src/README.md
+A	src/changed_files.txt
+A	src/changelog.md
+R100	src/CHANGELOG.md	src/example/example_1.cpp
+D	src/example/example_1/example_1_test.txt
+D	src/example/example_2/example_2_test.txt
+D	src/module/CHANGELOG.md
+D	src/module/module_test.txt
+D	src/other/haschangelog/CHANGELOG.md
+D	src/other/haschangelog/other_haschangelog_test.txt
+D	src/other/nochangelog/other_nochangelog_test.txt
+D	src/package/package_1/CHANGELOG.md
+D	src/package/package_1/package_1_test.txt
+D	src/package/package_2/CHANGELOG.md
+D	src/package/package_2/package_2_test.txt
+A	src/test.sh
+D	thrid_party/lib1/lib1_test.txt
+D	thrid_party/lib2/lib2_test.txt
+D	thrid_party/lib2/lib2_test.txt
