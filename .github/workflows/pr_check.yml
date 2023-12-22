@@ -14,7 +14,8 @@ jobs:
       - name: List changed files
         id: list_files
         run: |
-          echo "::set-output name=files::$(git diff --name-status main..feature_action_test)"
+          git diff --name-status main..feature_action_test > changed_files.txt
+          echo "FILES_PATH=changed_files.txt" >> $GITHUB_ENV  # Set environment variable in environment file
 
       - name: Run Python script
         run: python ./scripts/check_changelog.py
