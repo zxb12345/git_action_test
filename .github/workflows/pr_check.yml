@@ -11,7 +11,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Fetch branches
+        run: git fetch origin
+
       - name: List changed files
         id: list_files
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents of the current directory: $(ls -a)"
           git diff --name-status origin/main..origin/feature_action_test
