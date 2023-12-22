@@ -1,6 +1,11 @@
 name: Pull Request Check Changelog
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/*'
   workflow_dispatch:
 
 jobs:
