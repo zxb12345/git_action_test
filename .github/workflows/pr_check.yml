@@ -20,4 +20,4 @@ jobs:
       - name: Run Python script
         run: python ./scripts/check_changelog.py
         env:
-          CHANGED_FILES: ${{ steps.list_files.outputs.files }}
+          CHANGED_FILES: ${{ env.FILES_PATH }}
