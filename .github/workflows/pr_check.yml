@@ -16,6 +16,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Check if it's a PR revert
+        id: check_pr_revert
+        run: |
+          if [[ -n "${{ github.event.pull_request.merged }}" && -n "${{ github.event.pull_request.merged_by }}" ]]; then
+            echo "PR Revert detected"
+          else
+            echo "Not a PR Revert"
+          fi
+      
+
       - name: Check PR or PR revert
         run: |
           PR_NUMBER=$(echo "${GITHUB_REF}" | awk 'BEGIN { FS = "/" } ; { print $3 }')
