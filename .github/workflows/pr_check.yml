@@ -19,7 +19,7 @@ jobs:
       - name: Get PR Title
         run: |
           PR_TITLE="${{ github.event.pull_request.title }}"
-          echo "Pull Request Title: $PR_TITLE"
+          echo "Pull Request Title: "$PR_TITLE""
           if [[ "$PR_TITLE" == Revert* ]]; then
             echo "This is a Revert PR"
           else
