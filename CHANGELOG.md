@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- thrid changlelog
+
+## [0.0.1] - 2023-12-23
+
+### Added
+
 - second changlelog
 
 ## [0.0.0] - 2023-12-22
