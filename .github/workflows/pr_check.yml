@@ -16,14 +16,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get PR Title
-        run: |
-          echo "${{ github.event.pull_request }}"
-          if [[ "'${{ github.event.pull_request.title }}'" == Revert* ]]; then
-            echo "This is a Revert PR"
-          else
-            echo "This is not a Revert PR"
-          fi
+      - name: Run Python script
+        run: python ./scripts/check_revert.py
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
 
       - name: Check if it's a PR revert
         id: check_pr_revert
