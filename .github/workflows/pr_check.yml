@@ -64,6 +64,12 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           echo "Contents of the current directory: $(ls -a)"
+          echo "=========github.event.before============"
+          echo "${{ github.event.before }}"
+          echo "=========github.sha============"
+          echo "${{ github.sha }}"
+          echo "=========github.event.pull_request.base.sha============"
+          echo "${{ github.event.pull_request.base.sha }}"
           echo "diff content"
           git diff --name-only ${{ github.event.before }} ${{ github.sha }}
           git diff --name-only ${{ github.event.before }} ${{ github.sha }} > changed_files.txt
