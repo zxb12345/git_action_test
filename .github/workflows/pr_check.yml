@@ -24,6 +24,7 @@ jobs:
             echo "This is a Revert PR"
           else
             echo "This is not a Revert PR"
+          fi
 
       - name: Check if it's a PR revert
         id: check_pr_revert
