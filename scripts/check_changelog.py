@@ -28,12 +28,16 @@ def group_files_by_directory(file_path):
     with open(file_path, 'r') as file:
         for line in file:
             # status, filename = line.strip().split(maxsplit=1)
+            print(line)
             filename = line
             
             if 'CHANGELOG.md' in filename:
+                print("is a CHANGELOG.md")
                 changelog_files.append(filename)
                 continue
-
+            else:
+                print("is not a CHANGELOG.md")
+            
             directory = os.path.dirname(filename)
             if directory not in changed_dirs:
                 changelog_directory = find_changelog_directory(directory)
@@ -41,17 +45,16 @@ def group_files_by_directory(file_path):
 
     return changed_dirs
 
-
-def find_changelog_by_files():
-    return
-
 if __name__ == "__main__":
+    print("================check_changelog begin==============")
     changed_files = os.environ.get('CHANGED_FILES', '')
     # changed_files = "changed_files.txt"
     if changed_files != '':
         # process_diff(changed_files)
 
+        print("=====group_files_by_directory begin====")
         changed_dirs = group_files_by_directory(changed_files)
+        print("=====group_files_by_directory begin====")
 
         print(changelog_files)
 
@@ -67,3 +70,4 @@ if __name__ == "__main__":
             else:
                 print(f"目录{directory}检测正常")
             print("=============================================================================")
+    print("================check_changelog end==============")
