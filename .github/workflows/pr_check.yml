@@ -71,8 +71,8 @@ jobs:
           echo "=========github.event.pull_request.base.sha============"
           echo "${{ github.event.pull_request.base.sha }}"
           echo "diff content"
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }}
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} > changed_files.txt
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} > changed_files.txt
           echo "FILES_PATH=changed_files.txt" >> $GITHUB_ENV
 
       - name: Run Python script
