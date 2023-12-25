@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- forth+3 changlelog
+
+## [0.0.3] - 2023-12-25
+
+### Added
+
 - forth+2 changlelog
 
 ## [0.0.2] - 2023-12-25
