@@ -19,49 +19,14 @@ jobs:
       - name: Run Python script
         run: python ./scripts/check_revert.py
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-
-      - name: Check if it's a PR revert
-        id: check_pr_revert
-        run: |
-          echo "=========================="
-          echo "${{ github.event.pull_request.merged }}"
-          echo "${{ github.event.pull_request.merged_by }}"
-          echo "=========================="
-          if [[ -n "${{ github.event.pull_request.merged }}" && -n "${{ github.event.pull_request.merged_by }}" ]]; then
-            echo "PR Revert detected"
-          else
-            echo "Not a PR Revert"
-          fi
-      
-
-      - name: Check PR or PR revert
-        run: |
-          PR_NUMBER=$(echo "${GITHUB_REF}" | awk 'BEGIN { FS = "/" } ; { print $3 }')
-          echo "=========================="
-          echo "${GITHUB_REF}"
-          echo "${PR_NUMBER}"
-          echo "=========================="
-
-          # Fetch the PR details using GitHub REST API
-          PR_DETAILS=$(curl -sSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                        "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUMBER}")
-          echo "===========PR_DETAILS==============="
-          echo "${PR_DETAILS}"
-          echo "===========PR_DETAILS==============="
-
-          # Check if the PR has a 'reverted' label
-          if echo "${PR_DETAILS}" | jq '.labels[].name' | grep -q 'reverted'; then
-            echo "This is a PR revert"
-            # Your PR revert specific steps here
-          else
-            echo "This is a regular PR"
-            # Your regular PR steps here
-          fi
+          PR_TITLE: ${{ github.event.pull_request.title }}      
 
       - name: List changed files
         id: list_files
         run: |
+          echo "=============github.event.pull_request begin==========="
+          echo "${{ toJson(github.event.pull_request) }}"
+          echo "=============github.event.pull_request end==========="
           echo "Current directory: $(pwd)"
           echo "Contents of the current directory: $(ls -a)"
           echo "=========github.event.before============"
@@ -70,9 +35,12 @@ jobs:
           echo "${{ github.sha }}"
           echo "=========github.event.pull_request.base.sha============"
           echo "${{ github.event.pull_request.base.sha }}"
-          echo "diff content"
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }}
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} > changed_files.txt
+          echo "=========github.event.pull_request.head.sha============"
+          echo "${{ github.event.pull_request.head.sha }}"
+          echo "diff content begin"
+          git diff --name-only ${{ github.sha }} ${{ github.event.pull_request.head.sha }}
+          echo "diff content end"
+          git diff --name-only ${{ github.sha }} ${{ github.event.pull_request.head.sha }} > changed_files.txt
           echo "FILES_PATH=changed_files.txt" >> $GITHUB_ENV
 
       - name: Run Python script
