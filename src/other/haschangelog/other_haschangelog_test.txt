@@ -1,3 +1,2 @@
 update other_haschangelog_test.txt 1
 update other_haschangelog_test.txt 2
-update other_haschangelog_test.txt 3
