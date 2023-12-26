@@ -13,24 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     if: "!startsWith(github.event.pull_request.title, 'Revert')"
     steps:
-      - name: Check revert
-        run: echo "this is a Revert action"
-        id: check_revert
-        if: '!startsWith(github.event.pull_request.title, ''Revert'')'
-
-      - name: Check run
-        run: echo "=======check run step"
-        if: steps.check_revert.outputs.result == 'true'
-
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-
-      - name: Run Python script
-        run: python ./scripts/check_revert.py
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
 
       - name: Run Python script
         run: python ./scripts/check_changelog.py
