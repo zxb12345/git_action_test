@@ -24,9 +24,6 @@ jobs:
       - name: List changed files
         id: list_files
         run: |
-          echo "=============github.event.pull_request begin==========="
-          echo "${{ toJson(github.event.pull_request) }}"
-          echo "=============github.event.pull_request end==========="
           echo "Current directory: $(pwd)"
           echo "Contents of the current directory: $(ls -a)"
           echo "=========github.event.before============"
@@ -38,9 +35,9 @@ jobs:
           echo "=========github.event.pull_request.head.sha============"
           echo "${{ github.event.pull_request.head.sha }}"
           echo "diff content begin"
-          git diff --name-only ${{ github.sha }} ${{ github.event.pull_request.head.sha }}
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
           echo "diff content end"
-          git diff --name-only ${{ github.sha }} ${{ github.event.pull_request.head.sha }} > changed_files.txt
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > changed_files.txt
           echo "FILES_PATH=changed_files.txt" >> $GITHUB_ENV
 
       - name: Run Python script
