@@ -32,14 +32,8 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
 
-      - name: List changed files
-        id: list_files
-        run: |
-          echo "PR_BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
-          echo "PR_HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
-
       - name: Run Python script
         run: python ./scripts/check_changelog.py
         env:
-          BASH_COMMIT_ID: ${{ env.PR_BASE_SHA }}
-          PR_COMMIT_ID: ${{ env.PR_HEAD_SHA }}
+          BASH_COMMIT_ID: ${{ github.event.pull_request.base.sha }}
+          PR_COMMIT_ID: ${{ github.event.pull_request.head.sha }}
