@@ -1,0 +1,1 @@
+update other_haschangelog_test.txt 1
