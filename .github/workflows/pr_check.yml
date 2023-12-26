@@ -13,6 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: Check revert
+        run: echo "this is a Revert action"
+        id: check_revert
+        if: '!startsWith(github.event.pull_request.title, ''Revert'')'
+
+      - name: Check run
+        run: echo "=======check run step"
+        if: steps.check_revert.outputs.result == 'true'
+
       - name: Checkout code
         uses: actions/checkout@v2
         with:
@@ -21,28 +30,16 @@ jobs:
       - name: Run Python script
         run: python ./scripts/check_revert.py
         env:
-          PR_TITLE: ${{ github.event.pull_request.title }}      
+          PR_TITLE: ${{ github.event.pull_request.title }}
 
       - name: List changed files
         id: list_files
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Contents of the current directory: $(ls -a)"
-          echo "=========github.event.before============"
-          echo "${{ github.event.before }}"
-          echo "=========github.sha============"
-          echo "${{ github.sha }}"
-          echo "=========github.event.pull_request.base.sha============"
-          echo "${{ github.event.pull_request.base.sha }}"
-          echo "=========github.event.pull_request.head.sha============"
-          echo "${{ github.event.pull_request.head.sha }}"
-          echo "diff content begin"
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }}
-          echo "diff content end"
-          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} > changed_files.txt
-          echo "FILES_PATH=changed_files.txt" >> $GITHUB_ENV
+          echo "PR_BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+          echo "PR_HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
 
       - name: Run Python script
         run: python ./scripts/check_changelog.py
         env:
-          CHANGED_FILES: ${{ env.FILES_PATH }}
+          BASH_COMMIT_ID: ${{ env.PR_BASE_SHA }}
+          PR_COMMIT_ID: ${{ env.PR_HEAD_SHA }}
