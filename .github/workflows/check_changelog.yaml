@@ -32,6 +32,8 @@ jobs:
           BASH_COMMIT_ID: ${{ github.event.pull_request.base.sha }}
           PR_COMMIT_ID: ${{ github.event.pull_request.head.sha }}
         run: |
+          echo "${{ github.event.before }}"
+          echo "${{ github.sha }}"
           echo "=================Run Python script begin=============="
           CI_DEBUG=on bazel run //scripts:check_changelog -- \
             --base-commit-id "$BASH_COMMIT_ID" \
