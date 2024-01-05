@@ -30,7 +30,7 @@ jobs:
       - name: Run Python script
         env:
           BASH_COMMIT_ID: ${{ github.event.pull_request.base.sha }}
-          PR_COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+          PR_COMMIT_ID: ${{ github.sha }}
         run: |
           echo "${{ github.event.before }}"
           echo "${{ github.sha }}"
