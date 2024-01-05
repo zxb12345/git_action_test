@@ -85,10 +85,10 @@ def main():
     args = parser.parse_args()
     print(args.base_commit_id, args.pr_commit_id)
 
-    ptint("==================================================")
+    print("==================================================")
     result = subprocess.run(["git", "diff", "--name-status", args.base_commit_id, args.pr_commit_id], cwd=".", capture_output=True, text=True)
     print(result)
-    ptint("==================================================")
+    print("==================================================")
 
     if args.base_commit_id != '' and args.pr_commit_id != '':
         changed_files = get_changed_files(args.base_commit_id, args.pr_commit_id)
