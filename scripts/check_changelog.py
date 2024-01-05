@@ -1,17 +1,24 @@
+from argparse import ArgumentParser
+# from tools.ci.utils.misc import exit_if_exception
+
 import os
 import sys
 import subprocess
 import re
 
+
 changelog_file_name = 'CHANGELOG.md'
 
-bash_commit_id = ''
-pr_commit_id = ''
-changelog_files = []
-
-def get_changed_files():
+def get_changed_files(bash_commit_id, pr_commit_id):
     result = subprocess.run(["git", "diff", "--name-only", bash_commit_id, pr_commit_id], cwd=".", capture_output=True, text=True)
     return result.stdout.strip().splitlines()
+
+def group_files(changed_files):
+    changelog_files = []
+    other_files = []
+    for filename in changed_files:            
+        changelog_files.append(filename) if filename.endswith(changelog_file_name) else other_files.append(filename)        
+    return changelog_files,other_files
 
 def find_changelog_directory(directory):
     while directory != '':
@@ -24,68 +31,67 @@ def find_changelog_directory(directory):
 
     return ''
 
+def get_dir_changelog_map(other_files):
+    dir_changelog_map = {}
 
-def group_files_by_directory():
-    changed_files = get_changed_files()
-    changed_dirs = {}
-
-    for filename in changed_files:            
-        if changelog_file_name in filename:
-            changelog_files.append(filename)
-            continue
-        
+    for filename in other_files:
         directory = os.path.dirname(filename)
-        if directory not in changed_dirs:
+        if directory not in dir_changelog_map:
             changelog_directory = find_changelog_directory(directory)
-            changed_dirs[directory] = changelog_directory
+            dir_changelog_map[directory] = changelog_directory
 
-    return changed_dirs
+    return dir_changelog_map
 
-def get_changelog_diff(filename):
+def check_changelog_status(dir_changelog_map, changelog_files):
+    for directory, changelog_directory in dir_changelog_map.items():
+        changelog_path = os.path.join(changelog_directory, changelog_file_name)
+        if os.path.exists(changelog_path) == False:
+            print(f"The directory {directory} does not have the corresponding CHANGELOG.md file.")
+        elif changelog_path not in changelog_files:
+            print(f"The CHANGELOG.md file corresponding to the directory {directory} has not changed.")
+
+def get_changelog_diff(bash_commit_id, pr_commit_id, filename):
     result = subprocess.run(["git", "diff", "--no-prefix", bash_commit_id, pr_commit_id, "--", filename], cwd=".", capture_output=True, text=True)
     return result.stdout.strip()
 
-def check_changelog_format(filename):
-    diff_content = get_changelog_diff(filename)
+def check_changelog_diff(diff_content):
     new_changelog_pattern = re.compile(r'^\+## \[\d+\.\d+\.\d+\] - \d{4}-\d{2}-\d{2}$', re.MULTILINE)
     new_changelog_matches = new_changelog_pattern.findall(diff_content)
     if not new_changelog_matches:
-        print("Error: No new changelog found in the file. The filename is ", filename, ".")
+        # print("Error: No new changelog found in the file. The filename is ", filename, ".")
         return False
 
     changelog_pattern = re.compile(r'^[\+ ]?## \[\d+\.\d+\.\d+\] - \d{4}-\d{2}-\d{2}$', re.MULTILINE)
     changelog_matches = changelog_pattern.findall(diff_content)
-
     versions = [match.strip().split(' ')[1] for match in changelog_matches]
     if versions != sorted(versions, reverse=True):
         print("Error: Versions in CHANGELOG are not sorted in descending order.")
         return False
 
-    print("CHANGELOG format is valid. The filename is " + filename + ".")
     return True
 
-def check_changelog_files():
+def check_changelog_files(changelog_files, bash_commit_id, pr_commit_id):
     for changelog_file in changelog_files:
-        check_changelog_format(changelog_file)
+        diff_content = get_changelog_diff(bash_commit_id, pr_commit_id, changelog_file)
+        check_changelog_diff(diff_content)
+
+def main():
+    parser = ArgumentParser(prog=__name__,
+                            description='Clang format diffed codebase')
+    parser.add_argument('--base-commit-id', required=True, type=str,
+                        help='path of the root of the workspace')
+    parser.add_argument('--pr-commit-id', required=True, type=str)
+    
+    args = parser.parse_args()
+    print(args.base_commit_id, args.pr_commit_id)
+
+    if args.base_commit_id != '' and args.pr_commit_id != '':
+        changed_files = get_changed_files(args.base_commit_id, args.pr_commit_id)
+        (changelog_files, other_files) = group_files(changed_files)
+        dir_changelog_map = get_dir_changelog_map(other_files)
+        check_changelog_status(dir_changelog_map, changelog_files)
+        check_changelog_files(changelog_files, args.base_commit_id, args.pr_commit_id)
 
 if __name__ == "__main__":
-    bash_commit_id = os.environ.get('BASH_COMMIT_ID', '')
-    pr_commit_id = os.environ.get('PR_COMMIT_ID', '')
-    # bash_commit_id = 'main'
-    # pr_commit_id = 'feature_action'
-
-    if bash_commit_id != '' and pr_commit_id != '':
-        changed_dirs = group_files_by_directory()
-
-        for directory, changelog_directory in changed_dirs.items():
-            changelog_path = os.path.join(changelog_directory, changelog_file_name)
-
-            if os.path.exists(changelog_path) == False:
-                print(f"目录{directory}不存在对应的changelog文件")
-            elif changelog_path not in changelog_files:
-                print(f"目录{directory}对应的changelog文件没有更改")
-            else:
-                print(f"目录{directory}检测正常")
-
-        check_changelog_files()
-        
+    # exit_if_exception(main)
+    main()

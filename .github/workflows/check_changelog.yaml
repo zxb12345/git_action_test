@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  list_files:
+  check_changelog:
     runs-on: ubuntu-latest
     if: "!startsWith(github.event.pull_request.title, 'Revert')"
     steps:
@@ -18,8 +18,22 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Test Bazel
+        run: bazel --version
+
+      - name: Cat File Tree
+        run: tree
+
+      - name: Cat Git Log
+        run: git log --pretty=oneline
+
       - name: Run Python script
-        run: python ./scripts/check_changelog.py
         env:
           BASH_COMMIT_ID: ${{ github.event.pull_request.base.sha }}
           PR_COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git config --global user.name
+          git config --global user.email
+          CI_DEBUG=on bazel run //scripts:check_changelog -- \
+            --base-commit-id "$BASH_COMMIT_ID" \
+            --pr-commit-id "$PR_COMMIT_ID"
