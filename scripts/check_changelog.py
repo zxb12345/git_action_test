@@ -87,7 +87,7 @@ def main():
 
     print("==================================================")
     result = subprocess.run(["git", "diff", "--name-status", args.base_commit_id, args.pr_commit_id], cwd=".", capture_output=True, text=True)
-    print(result)
+    print(result.stdout.strip())
     print("==================================================")
 
     if args.base_commit_id != '' and args.pr_commit_id != '':
