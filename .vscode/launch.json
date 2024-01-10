@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/check_changelog.py",
+            "args": ["--api-url", "https://api.github.com", "--repo-path", "zxb12345/git_action_test", "--pr-number", "48", "--base-commit-id", "main", "--pr-commit-id", "feature_action"],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
