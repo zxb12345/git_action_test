@@ -1,4 +1,4 @@
-name: Pull Request Check Changelog
+name: Check Changelog
 
 on:
   pull_request:
@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - '**/*'
-  workflow_dispatch:
 
 jobs:
   check_changelog:
@@ -27,13 +26,25 @@ jobs:
       - name: Cat Git Log
         run: git log --pretty=oneline
 
+      - name: Cat Git status
+        run: |
+          echo "GITHUB API URL: $GITHUB_API_URL"
+          echo "GITHUB SERVER URL: $GITHUB_SERVER_URL"
+          echo "Repository Path: ${{ github.repository }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
+
+      # - name: Cat Git full status
+      #   run: echo "github: ${{ github }}"
+
       - name: Run Python script
         env:
           BASH_COMMIT_ID: ${{ github.event.pull_request.base.sha }}
-          PR_COMMIT_ID: ${{ github.event.pull_request.head.sha }}
+          PR_COMMIT_ID: ${{ github.sha }}
         run: |
-          git config --global user.name
-          git config --global user.email
+          echo "${{ github.event.before }}"
+          echo "${{ github.sha }}"
+          echo "=================Run Python script begin=============="
           CI_DEBUG=on bazel run //scripts:check_changelog -- \
             --base-commit-id "$BASH_COMMIT_ID" \
             --pr-commit-id "$PR_COMMIT_ID"
+          echo "=================Run Python script end==============="
