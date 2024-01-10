@@ -1,4 +1,4 @@
-name: Pull Request Check Changelog
+name: Check Changelog
 
 on:
   pull_request:
@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - '**/*'
-  workflow_dispatch:
 
 jobs:
   check_changelog:
@@ -26,6 +25,11 @@ jobs:
 
       - name: Cat Git Log
         run: git log --pretty=oneline
+
+      - name: Cat Git status
+        run: |
+          echo "Repository Path: ${{ github.repository }}"
+          echo "PR Number: ${{ github.event.pull_request.number }}"
 
       - name: Run Python script
         env:
