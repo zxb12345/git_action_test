@@ -12,8 +12,8 @@
             "args": ["--api-url", "https://api.github.com", 
                 "--repo-path", "zxb12345/git_action_test", 
                 "--pr-number", "48", 
-                "--base-commit-id", "main", 
-                "--pr-commit-id", "origin/feature_action"],
+                "--base-commit-id", "origin/main", 
+                "--pr-commit-id", "main"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
