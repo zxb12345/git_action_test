@@ -134,11 +134,15 @@ class ChangelogVersion:
     def __eq__(self, other):
         if not isinstance(other, ChangelogVersion):
             return NotImplemented
-        return self < other == False and other < self == False
+        test = self < other == False
+        test2 = other < self == False
+        return not (self < other) and not (other < self)
     
     def __le__(self, other):
         if not isinstance(other, ChangelogVersion):
             return NotImplemented
+        test = self < other
+        test2 = self == other
         return self < other or self == other
 
 class ChangelogItem(object):
@@ -171,7 +175,9 @@ class ChangelogItem(object):
 
 class ChangelogFile(object):
     FILENAME = "CHANGELOG.md"
-    CHANGE_MARK_PATTERN = re.compile(r'^@@ -\d+,\d+ \+(?P<line_no>\d+),\d+ @@')
+    # CHANGE_MARK_PATTERN = re.compile(r'^@@ -\d+,\d+ \+(?P<line_no>\d+),\d+ @@')
+    CHANGE_MARK_PATTERN = re.compile(r'^@@ -\d+(?:,\d+)? \+(?P<line_no>\d+)(?:,\d+)? @@')
+
     ITEM_PARSER = re.compile(r"^##\s+\[(?P<version>[^\]]+)\](\s+\-\s+(?P<date>\S+))?$")
     SECTION_PARSER = re.compile(r"^###\s+(?P<type>\S+)$")
 
@@ -186,8 +192,25 @@ class ChangelogFile(object):
         pre_line_is_bleak = False
         changelog_versions = []
         pre_line_is_content = False
+        has_change = False
 
         for line in content.split("\n"):
+            if is_new == False:
+                match_obj = ChangelogFile.CHANGE_MARK_PATTERN.match(line)
+                if has_change == True and not match_obj:
+                    line = line[1:]
+                elif match_obj:
+                    line_no = int(match_obj.group("line_no")) - 1
+                    if has_change == False:
+                        has_change = True
+                        continue
+                    else:
+                        status = CheckResult.ERROR
+                        log = "Line {}: 预期之外的修改".format(line_no + 1)
+                        break
+                elif has_change == False:
+                    continue
+
             line_no += 1
             cur_line_is_content = False
             if line_no == 1 and is_new:
@@ -362,13 +385,14 @@ class ChangelogFile(object):
         version = ''
         date = ''
         content = GitOption.get_file_content(ref, self.file_name)
+        line_no = 0
+        item = ChangelogItem(line_no, "")
         for line in content.split("\n"):
-            match_obj = ChangelogFile.ITEM_PARSER.match(line)
-            if match_obj:
-                version = match_obj.group("version")
-                date = match_obj.group("date")
+            line_no += 1
+            item = ChangelogItem(line_no, line)
+            if item.status == CheckResult.OK:
                 break
-        return version, date
+        return item
 
     def check_order(self, changelog_versions):
         status = CheckResult.OK
@@ -399,20 +423,20 @@ class ChangelogFile(object):
                 status, log = self.check_order(changelog_versions)
             
         elif file_status == "M":
-            (head_version, head_date) = self.get_version(head_ref)
+            head_version = self.get_version(head_ref)
             diff_content = GitOption.get_changelog_diff(base_ref, head_ref, self.file_name)
             if diff_content.strip() == '':
                 status = CheckResult.ERROR
                 log = "Changelog file is ok. The file is {}.".format(self.file_name)
             else:
-                (status, log, changelog_versions) = self.check_diff_content(diff_content)
-                if changelog_versions and (changelog_versions[0][1] != head_version or changelog_versions[0][2] != head_date):
+                (status, log, changelog_versions) = self.check_content(diff_content)
+                if changelog_versions and changelog_versions[0].line_no != head_version.line_no:
                     status = CheckResult.ERROR
                     log = "文件变更位置不正确"
                 if status == CheckResult.OK:
-                    (base_version, base_date) = self.get_version(base_ref)
-                    if base_version != '' and base_date != '':
-                        changelog_versions.append([0, base_version, base_date])
+                    base_version = self.get_version(base_ref)
+                    if base_version.status == CheckResult.OK:
+                        changelog_versions.append(base_version)
                     status, log = self.check_order(changelog_versions)
         else:
             print("不做处理")
