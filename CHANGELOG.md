@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.1] - 2023-03-05
 
+### Added
+
 - Arabic translation (#444).
+- Arabic translation (#555).
+  Arabic translation (#666).
 
 ### Fixed
 
