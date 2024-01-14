@@ -5,46 +5,46 @@ import sys
 import subprocess
 import re
 from enum import Enum
-import requests
+# import requests
 from datetime import datetime
-
-# class OutputLevel(Enum):
-#     ERROR = 0
-#     INFO = 1
-#     DEBUG = 2
-
-# class OutputLog(object):
-#     def __init__(self, level, message):
-#         self.level = level
-#         self.message = message
 
 class CheckResult(Enum):
     OK = 0
     ERROR = 1
 
-class GitOption(object):
+class GitWrapper(object):
+    @staticmethod
+    def run_command(command):
+        try:
+            result = subprocess.run(command, cwd=".", capture_output=True, text=True, check=True)
+            return result.stdout.strip()
+        except subprocess.CalledProcessError as e:
+            raise# ValueError("Cannot divide by zero")
+
     @staticmethod
     def get_changed_files(base_ref, head_ref):
-        result = subprocess.run(["git", "diff", "--name-only", base_ref, head_ref], cwd=".", capture_output=True, text=True)
-        return result.stdout.strip().splitlines()
+        command = ["git", "diff", "--name-only", base_ref, head_ref]
+        result = GitWrapper.run_command(command)
+        return result.splitlines()
     
+    @staticmethod
     def get_file_change_status(base_ref, head_ref, filename):
-        result = subprocess.run(["git", "diff", "--name-status", base_ref, head_ref, filename], cwd=".", capture_output=True, text=True)
+        command = ["git", "diff", "--name-status", base_ref, head_ref, filename]
+        result = GitWrapper.run_command(command)
         status = 'N'
-        if result.stdout.strip() != '':
+        if result != '':
             status = result.stdout.strip().split()[0]
         return status
     
     @staticmethod
-    def get_changelog_diff(bash_commit_id, pr_commit_id, filename):
-        result = subprocess.run(["git", "diff", "--no-prefix", "-U0", bash_commit_id, pr_commit_id, "--", filename], cwd=".", capture_output=True, text=True)
-        return result.stdout.strip()
+    def get_changelog_diff(base_commit_id, pr_commit_id, filename):
+        command = ["git", "diff", "--no-prefix", "-U0", base_commit_id, pr_commit_id, "--", filename]
+        return GitWrapper.run_command(command)
     
     @staticmethod
     def get_file_content(commit_id, filename):
-        result = subprocess.run(["git", "show", "{}:{}".format(commit_id, filename)], cwd=".", capture_output=True, text=True)
-        # print("get_file_content", result.stdout.strip())
-        return result.stdout.strip()
+        command = ["git", "show", "{}:{}".format(commit_id, filename)]
+        return GitWrapper.run_command(command)
     
     @staticmethod
     def submit_comment_report(api_url, repo_path, pr_number, report, token):
@@ -56,21 +56,21 @@ class GitOption(object):
         report_str = '\n'.join(report)
         data = {"body": report_str}
 
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 201:
-            print("Comment submitted successfully.")
-        else:
-            print(f"Failed to submit comment. Status code: {response.status_code}, Response: {response.text}")
+        # response = requests.post(url, headers=headers, json=data)
+        # if response.status_code == 201:
+        #     print("Comment submitted successfully.")
+        # else:
+        #     print(f"Failed to submit comment. Status code: {response.status_code}, Response: {response.text}")
 
-class OtherDir(object):
+class ChangeDir(object):
     def __init__(self, dir_name):
         self.dir_name = dir_name
 
     def find_changelog_directory(self):
         status = CheckResult.ERROR
         dir_name = self.dir_name
+        changelog_path = os.path.join(dir_name, ChangelogFile.FILENAME)
         while True:
-            changelog_path = os.path.join(dir_name, ChangelogFile.FILENAME)
             if os.path.exists(changelog_path):
                 status = CheckResult.OK
                 break
@@ -78,26 +78,23 @@ class OtherDir(object):
                 break
             else:
                 dir_name = os.path.dirname(dir_name)
+                changelog_path = os.path.join(dir_name, ChangelogFile.FILENAME)
 
-        return status, os.path.join(dir_name, ChangelogFile.FILENAME)
+        return status, changelog_path
 
     def check(self, changelog_files):
         (status, changelog_path) = self.find_changelog_directory()
-        log = ""
+        log = "The directory {} is ok.".format(self.dir_name)
         if status == CheckResult.ERROR:
             log = "The directory {} does not have the corresponding CHANGELOG.md file.".format(self.dir_name)
-        else:
-            if changelog_path in [changelog_file.file_name for changelog_file in changelog_files]:
-                status = CheckResult.OK
-                log = "The directory {} is ok.".format(self.dir_name)
-            else:
-                status = CheckResult.ERROR
-                log = "The CHANGELOG.md file {} corresponding to the directory {} has not changed.".format(changelog_path, self.dir_name)
+        elif changelog_path not in [changelog_file.file_name for changelog_file in changelog_files]:
+            status = CheckResult.ERROR
+            log = "The CHANGELOG.md file {} corresponding to the directory {} has not changed.".format(changelog_path, self.dir_name)
         
         return status, log
 
-
 class ChangelogSection(object):
+    CHANGELOG_TYPES = ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Fixed', 'Security']
     SECTION_PARSER = re.compile(r"^###\s+(?P<type>\S+)$")
     def __init__(self, line_no, content):
         self.line_no = line_no
@@ -111,7 +108,7 @@ class ChangelogSection(object):
         match_obj = ChangelogSection.SECTION_PARSER.match(content)
         if match_obj is None:
             status = CheckResult.ERROR
-        elif match_obj.group("type") not in ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Fixed', 'Security']:
+        elif match_obj.group("type") not in ChangelogSection.CHANGELOG_TYPES:
             status = CheckResult.ERROR
 
         if status != CheckResult.OK:
@@ -134,15 +131,11 @@ class ChangelogVersion:
     def __eq__(self, other):
         if not isinstance(other, ChangelogVersion):
             return NotImplemented
-        test = self < other == False
-        test2 = other < self == False
         return not (self < other) and not (other < self)
     
     def __le__(self, other):
         if not isinstance(other, ChangelogVersion):
             return NotImplemented
-        test = self < other
-        test2 = self == other
         return self < other or self == other
 
 class ChangelogItem(object):
@@ -175,11 +168,7 @@ class ChangelogItem(object):
 
 class ChangelogFile(object):
     FILENAME = "CHANGELOG.md"
-    # CHANGE_MARK_PATTERN = re.compile(r'^@@ -\d+,\d+ \+(?P<line_no>\d+),\d+ @@')
     CHANGE_MARK_PATTERN = re.compile(r'^@@ -\d+(?:,\d+)? \+(?P<line_no>\d+)(?:,\d+)? @@')
-
-    ITEM_PARSER = re.compile(r"^##\s+\[(?P<version>[^\]]+)\](\s+\-\s+(?P<date>\S+))?$")
-    SECTION_PARSER = re.compile(r"^###\s+(?P<type>\S+)$")
 
     def __init__(self, file_name):
         self.file_name = file_name
@@ -306,85 +295,8 @@ class ChangelogFile(object):
 
         return status, log, changelog_versions
 
-    def check_diff_content(self, diff_content):
-        status = CheckResult.OK
-        log = "changelog check ok. filename is {}.".format(self.file_name)
-
-        has_change = False
-        line_no = 0
-        is_bleak = False
-        is_empty = True
-        changelog_versions = []
-
-        for line in diff_content.split("\n"):
-            match_obj = ChangelogFile.CHANGE_MARK_PATTERN.match(line)
-            line_no += 1
-            if match_obj:
-                line_no = int(match_obj.group("line_no")) - 1
-                if has_change == False:
-                    has_change = True
-                else:
-                    status = CheckResult.ERROR
-                    log = "Line {}: 预期之外的修改".format(line_no + 1)
-                    break
-            elif has_change:
-                if line.startswith("+"):
-                    line = line[1:].strip()
-                    if line == "":
-                        if is_bleak == True:
-                            status = CheckResult.ERROR
-                            log = "Line {}: 多余的空行".format(line_no)
-                            break
-                        is_bleak = True
-                    elif line.startswith("## "):
-                        is_bleak = False
-                        match_obj = ChangelogFile.ITEM_PARSER.match(line)
-                        if match_obj is None:
-                            status = CheckResult.ERROR
-                            log = "Line {}: Version item must match the format [version] - date".format(line_no)
-                            break
-                        elif changelog_versions and is_empty == True:
-                            status = CheckResult.ERROR
-                            log = "Line {}: version内容为空".format(changelog_versions[-1][0])
-                            break
-                        is_empty = True
-                        changelog_versions.append([line_no, match_obj.group("version"), match_obj.group("date")])
-                    elif line.startswith("### "):
-                        is_bleak = False
-                        if not changelog_versions:
-                            status = CheckResult.ERROR
-                            log = "Line {}: At least one item must be added before section.".format(line_no)
-                            break
-                        match_obj = ChangelogFile.SECTION_PARSER.match(line)
-                        if match_obj is None:
-                            status = CheckResult.ERROR
-                            log = "Line {}: Section line must be a level-3 title.".format(line_no)
-                            break
-                        elif match_obj.group("type") not in ['Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Fixed', 'Security']:
-                            status = CheckResult.ERROR
-                            log = "Line {}: Unknown section type: {}".format(line_no, match_obj.group("type"))
-                            break
-                        is_empty = False
-                    elif line.startswith("- ") or ():
-                        is_bleak = False
-                        is_content = True
-                    elif line.startswith("  "):
-                        is_bleak = False
-                        if is_content:
-                            print("noexpect error 4", line_no, line)
-                    else:
-                        is_bleak = False
-                        print("noexpect error 5", line_no, line)
-                else:
-                    print("noexpect error 6", line_no, line)
-            # else:
-            #     print("noexpect error 7", line_no, line)
-        return status, log, changelog_versions
-
-    def get_version(self, ref):
-        version = ''
-        date = ''
-        content = GitOption.get_file_content(ref, self.file_name)
+    def get_last_version(self, ref):
+        content = GitWrapper.get_file_content(ref, self.file_name)
         line_no = 0
         item = ChangelogItem(line_no, "")
         for line in content.split("\n"):
@@ -415,38 +327,32 @@ class ChangelogFile(object):
         status = CheckResult.OK
         log = "111111111111111111111111"
 
-        file_status = GitOption.get_file_change_status(base_ref, head_ref, self.file_name)
+        file_status = GitWrapper.get_file_change_status(base_ref, head_ref, self.file_name)
         if file_status == "A":
-            file_content = GitOption.get_file_content(head_ref, self.file_name)
-            (status, log, changelog_versions) = self.check_content(file_content)
+            file_content = GitWrapper.get_file_content(head_ref, self.file_name)
+            (status, log, changelog_versions) = self.check_content(file_content, True)
             if status == CheckResult.OK:
                 status, log = self.check_order(changelog_versions)
-            
         elif file_status == "M":
-            head_version = self.get_version(head_ref)
-            diff_content = GitOption.get_changelog_diff(base_ref, head_ref, self.file_name)
-            if diff_content.strip() == '':
+            head_version = self.get_last_version(head_ref)
+            diff_content = GitWrapper.get_changelog_diff(base_ref, head_ref, self.file_name)
+            
+            (status, log, changelog_versions) = self.check_content(diff_content)
+            if changelog_versions and changelog_versions[0].line_no != head_version.line_no:
                 status = CheckResult.ERROR
-                log = "Changelog file is ok. The file is {}.".format(self.file_name)
-            else:
-                (status, log, changelog_versions) = self.check_content(diff_content)
-                if changelog_versions and changelog_versions[0].line_no != head_version.line_no:
-                    status = CheckResult.ERROR
-                    log = "文件变更位置不正确"
-                if status == CheckResult.OK:
-                    base_version = self.get_version(base_ref)
-                    if base_version.status == CheckResult.OK:
-                        changelog_versions.append(base_version)
-                    status, log = self.check_order(changelog_versions)
-        else:
-            print("不做处理")
+                log = "文件变更位置不正确"
+            if status == CheckResult.OK:
+                base_version = self.get_last_version(base_ref)
+                if base_version.status == CheckResult.OK:
+                    changelog_versions.append(base_version)
+                status, log = self.check_order(changelog_versions)
 
         return status, log
 
 class FileManager(object):
     def __init__(self, files):
         self.files = files
-        (self.changelog_files, self.other_dirs) = self.handle_files(files)
+        (self.changelog_files, self.change_dirs) = self.handle_files(files)
 
     def handle_files(self, files):
         changelog_files = []
@@ -454,18 +360,17 @@ class FileManager(object):
         for file in files:
             changelog_files.append(ChangelogFile(file)) if file.endswith(ChangelogFile.FILENAME) else other_files.append(file)
 
-        other_dirs = []
+        change_dirs = []
         for other_file in other_files:
             dir = os.path.dirname(other_file)
-            if dir not in [other_dir.dir_name for other_dir in other_dirs]:
-                other_dir = OtherDir(dir)
-                other_dirs.append(other_dir)
+            if dir not in [other_dir.dir_name for other_dir in change_dirs]:
+                change_dirs.append(ChangeDir(dir))
 
-        return changelog_files, other_dirs
+        return changelog_files, change_dirs
     
     def check(self, base_ref, head_ref):
         output = []
-        for dir in self.other_dirs:
+        for dir in self.change_dirs:
             (status, log) = dir.check(self.changelog_files)
             if True or status != CheckResult.OK:
                 output.append(log)
@@ -487,17 +392,15 @@ def main():
                         help='path of the root of the workspace')
     parser.add_argument('--pr-commit-id', required=True, type=str)
     args = parser.parse_args()
-    if args.base_commit_id == '' or args.pr_commit_id == '':
-        return
     
-    changed_files = GitOption.get_changed_files(args.base_commit_id, args.pr_commit_id)
+    changed_files = GitWrapper.get_changed_files(args.base_commit_id, args.pr_commit_id)
     file_manager = FileManager(changed_files)
 
     check_result = file_manager.check(args.base_commit_id, args.pr_commit_id)
     print('\n'.join(check_result))
 
     # token = "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"
-    # GitOption.submit_comment_report(args.api_url, args.repo_path, args.pr_number, check_result, token)
+    # GitWrapper.submit_comment_report(args.api_url, args.repo_path, args.pr_number, check_result, token)
 
 if __name__ == "__main__":
     # exit_if_exception(main)
