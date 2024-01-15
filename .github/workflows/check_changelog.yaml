@@ -45,6 +45,7 @@ jobs:
           echo "${{ github.sha }}"
           echo "=================Run Python script begin=============="
           CI_DEBUG=on bazel run //scripts:check_changelog -- \
+            --workspace ${{ github.workspace }} \
             --api-url "$GITHUB_API_URL" \
             --repo-path "$GITHUB_SERVER_URL" \
             --pr-number ${{ github.event.pull_request.number }} \
