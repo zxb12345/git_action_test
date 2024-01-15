@@ -19,6 +19,9 @@ class GitWrapper(object):
             result = subprocess.run(command, cwd=".", capture_output=True, text=True, check=True)
             return result.stdout.strip()
         except subprocess.CalledProcessError as e:
+            print(f"Error executing command: {e.cmd}")
+            print(f"Return code: {e.returncode}")
+            print(f"Error output:\n{e.stderr}")
             raise# ValueError("Cannot divide by zero")
 
     @staticmethod
@@ -33,7 +36,7 @@ class GitWrapper(object):
         result = GitWrapper.run_command(command)
         status = 'N'
         if result != '':
-            status = result.stdout.strip().split()[0]
+            status = result.split()[0]
         return status
     
     @staticmethod
