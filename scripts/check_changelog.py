@@ -8,6 +8,8 @@ from enum import Enum
 # import requests
 from datetime import datetime
 
+workspace = "."
+
 class CheckResult(Enum):
     OK = 0
     ERROR = 1
@@ -16,7 +18,7 @@ class GitWrapper(object):
     @staticmethod
     def run_command(command):
         try:
-            result = subprocess.run(command, cwd=".", capture_output=True, text=True, check=True)
+            result = subprocess.run(command, cwd=workspace, capture_output=True, text=True, check=True)
             return result.stdout.strip()
         except subprocess.CalledProcessError as e:
             print(f"Error executing command: {e.cmd}")
@@ -33,6 +35,12 @@ class GitWrapper(object):
     @staticmethod
     def get_file_change_status(base_ref, head_ref, filename):
         command = ["git", "diff", "--name-status", base_ref, head_ref, filename]
+        if os.path.exists(filename):
+            absolute_path = os.path.abspath(filename)
+            print(f"File '{filename}' exists.", absolute_path)
+        else:
+            absolute_path = os.path.abspath(filename)
+            print(f"File '{filename}' does not exist.", absolute_path)
         result = GitWrapper.run_command(command)
         status = 'N'
         if result != '':
@@ -387,6 +395,7 @@ class FileManager(object):
 
 def main():
     parser = ArgumentParser(prog=__name__, description='Clang format diffed codebase')
+    parser.add_argument('--workspace', required=True, type=str)
     parser.add_argument('--api-url', required=True, type=str,
                         help='path of the root of the workspace')
     parser.add_argument('--repo-path', required=True, type=str)
@@ -395,7 +404,12 @@ def main():
                         help='path of the root of the workspace')
     parser.add_argument('--pr-commit-id', required=True, type=str)
     args = parser.parse_args()
-    
+
+    os.chdir(args.workspace)
+
+    # global workspace
+    # workspace = args.workspace
+
     changed_files = GitWrapper.get_changed_files(args.base_commit_id, args.pr_commit_id)
     file_manager = FileManager(changed_files)
 

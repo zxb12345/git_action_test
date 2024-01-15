@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/scripts/check_changelog.py",
             "args": ["--api-url", "https://api.github.com", 
                 "--repo-path", "zxb12345/git_action_test", 
-                "--pr-number", "48", 
-                "--base-commit-id", "origin/main", 
-                "--pr-commit-id", "main"],
+                "--pr-number", "49",
+                "--base-commit-id", "aca32135651fc640f168f5f2d6af07df501b5643", 
+                "--pr-commit-id", "fac6109fde274bb45960683b44362967ac42e352"],
             "console": "integratedTerminal",
             "justMyCode": true
         }
